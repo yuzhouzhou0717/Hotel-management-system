@@ -1,0 +1,378 @@
+{% extends base_template %}
+
+
+{% block content %}
+    <style>
+        /* 侧边栏样式 */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 250px;
+            margin-top: 5px;
+            background-color: #f8f9fa;
+            border-right: 1px solid #ddd;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar h4 {
+            color: #495057;
+            margin-bottom: 30px;
+            font-size: 1.5rem;
+            text-align: center;
+        }
+
+        .sidebar a {
+            display: block;
+            padding: 12px 20px;
+            color: #495057;
+            text-decoration: none;
+            font-size: 1.1rem;
+            border-bottom: 1px solid #ddd;
+            transition: background-color 0.3s;
+        }
+
+        .sidebar a:hover {
+            background-color: #007bff;
+            color: #fff;
+        }
+
+        /* 主内容区域 */
+        .content {
+            margin-left: 260px;
+            padding: 30px;
+        }
+
+        /* 标题样式 */
+        .page-header {
+            background-color: #007bff;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            font-size: 2rem;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        /* 餐位卡片样式 */
+        .card {
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border-radius: 10px;
+        }
+
+        .card:hover {
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            transform: translateY(-5px);
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .card-text {
+            font-size: 1rem;
+        }
+
+        /* 当前已点餐列表样式 */
+        #order-summary {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 300px;
+            background-color: #ffffff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            max-height: 400px;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        #order-summary h4 {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+
+        #order-list {
+            list-style-type: none;
+            padding-left: 0;
+            margin-bottom: 0;
+        }
+
+        #order-list li {
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+            font-size: 0.9rem;
+            color: #495057;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 200px;
+            }
+
+            .content {
+                margin-left: 220px;
+            }
+
+            #order-summary {
+                width: 80%;
+                right: 10%;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .sidebar {
+                width: 100%;
+                position: relative;
+            }
+
+            .content {
+                margin-left: 0;
+            }
+
+            #order-summary {
+                width: 90%;
+                right: 5%;
+            }
+            /* 标题样式 */
+    .page-header {
+        background-color: #007bff;
+        color: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+        font-size: 2rem;
+        font-weight: bold;
+        text-align: center;
+    }
+
+        }
+    </style>
+
+    <div class="container-fluid">
+        <!-- 侧边栏 -->
+        <div class="sidebar">
+            <h4 class="text-center">功能菜单</h4>
+            <a href="{% url 'login' %}">首页</a>
+            <a href="{% url 'catering_dashboard' %}">餐饮管理</a>
+            <a href="{% url 'customer_seat' %}">顾客就座</a>
+            <a href="{% url 'dish' %}">点菜</a>
+            <a href="{% url 'bills_view' %}">结账</a>
+        </div>
+
+        <!-- 主内容区域 -->
+        <div class="content">
+              <div class="page-header">
+           顾客点餐
+        </div>
+
+
+            <!-- 选择餐桌 -->
+            <div class="form-group">
+                <label for="table_number">选择餐桌</label>
+                <select id="table_number" class="form-control" onchange="onTableChange()">
+                    <option value="">请选择餐桌</option>
+                    {% for table in tables %}
+                        <option value="{{ table.id }}">{{ table.table_number }} - {{ table.customer_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <h3>菜品列表</h3>
+
+            <!-- 菜品列表 -->
+            <div class="row">
+                {% for dish in dishes %}
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ dish.name }}</h5>
+                                <p class="card-text">价格: ¥{{ dish.price }}</p>
+                                <!-- 数量选择 -->
+                                <div class="input-group mb-3">
+                                    <button class="btn btn-outline-secondary btn-sm" type="button" id="decrease-{{ dish.id }}">-</button>
+                                    <input type="number" id="quantity-{{ dish.id }}" class="form-control" value="1" min="1">
+                                    <button class="btn btn-outline-secondary btn-sm" type="button" id="increase-{{ dish.id }}">+</button>
+                                </div>
+
+                                <button class="btn btn-primary add-to-order" data-dish-id="{{ dish.id }}">点菜</button>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- 当前已点餐固定显示框 -->
+    <div id="order-summary">
+        <h4>当前餐桌已点餐:</h4>
+        <ul id="order-list" class="list-unstyled">
+            <!-- 动态更新已点菜品列表 -->
+        </ul>
+    </div>
+
+    <script>
+        let currentTableId = null;
+
+        // 点击加号按钮时，将菜品添加到餐桌
+        document.querySelectorAll('.add-to-order').forEach(function(button) {
+            button.addEventListener('click', function() {
+                const tableId = document.getElementById('table_number').value;
+                const dishId = this.getAttribute('data-dish-id');
+                const quantityInput = document.getElementById('quantity-' + dishId);
+                const quantity = parseInt(quantityInput.value);
+
+                if (!tableId) {
+                    alert('请选择餐桌');
+                    return;
+                }
+
+                // 记录当前选择的餐桌
+                if (currentTableId !== tableId) {
+                    currentTableId = tableId;
+                    updateOrderSummary();  // 更新已点餐列表
+                }
+
+                // 发送请求添加菜品到餐桌
+                fetch('/hotel/add_to_order/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({
+                        'table_id': tableId,
+                        'dish_id': dishId,
+                        'quantity': quantity  // 传递数量
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('菜品已添加到餐桌');
+                        updateOrderSummary();  // 更新已点餐列表
+                    } else {
+                        alert('添加失败: ' + data.message);
+                    }
+                });
+            });
+        });
+
+        // 当餐桌改变时触发的事件
+        function onTableChange() {
+            const tableId = document.getElementById('table_number').value;
+            if (tableId) {
+                currentTableId = tableId; // 更新当前选中的餐桌 ID
+                updateOrderSummary();    // 刷新当前点餐内容
+            } else {
+                currentTableId = null; // 如果未选择餐桌，清空当前点餐内容
+                document.getElementById('order-list').innerHTML = '';
+            }
+        }
+
+        // 增加数量操作
+        document.querySelectorAll('.btn-outline-secondary').forEach(function(button) {
+            button.addEventListener('click', function() {
+                const dishId = this.id.split('-')[1];  // 获取菜品 ID
+                const quantityInput = document.getElementById('quantity-' + dishId);
+                let quantity = parseInt(quantityInput.value);
+
+                if (this.id.includes('increase')) {
+                    quantityInput.value = quantity + 1;  // 增加数量
+                } else if (this.id.includes('decrease') && quantity > 1) {
+                    quantityInput.value = quantity - 1;  // 减少数量
+                }
+            });
+        });
+
+     // 更新当前餐桌已点的菜品列表
+    function updateOrderSummary() {
+        if (!currentTableId) {
+            return;
+        }
+
+        fetch(`/hotel/get_order_summary/?table_id=${currentTableId}`, {
+            method: 'GET',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const orderList = document.getElementById('order-list');
+                orderList.innerHTML = '';  // 清空当前列表
+
+                // 更新点餐列表
+                data.order_items.forEach(item => {
+                    const li = document.createElement('li');
+                    li.classList.add('order-item');
+                    li.innerHTML = `${item.dish_name} - ¥${item.price} x ${item.quantity}
+                                    <button class="btn btn-danger btn-sm float-end delete-order" data-order-id="${item.order_id}">删除</button>`;
+                    orderList.appendChild(li);
+                });
+
+                // 添加删除按钮的事件监听器
+                document.querySelectorAll('.delete-order').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const orderId = this.getAttribute('data-order-id');
+                        deleteOrderItem(orderId);  // 删除点餐项
+                    });
+                });
+            } else {
+                alert('获取点餐信息失败');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('请求失败');
+        });
+    }
+
+    // 删除点餐项
+    function deleteOrderItem(orderId) {
+        if (!currentTableId) {
+            alert('请选择餐桌');
+            return;
+        }
+
+        fetch(`/hotel/delete_order_item/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                'order_id': orderId,
+                'table_id': currentTableId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('菜品已删除');
+                updateOrderSummary();  // 更新已点餐列表
+            } else {
+                alert('删除失败: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('请求失败');
+        });
+    }
+    </script>
+{% endblock %}

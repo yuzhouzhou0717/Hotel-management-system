@@ -1,0 +1,762 @@
+{% extends base_template %}
+
+{% block content %}
+<style>
+  .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 250px;
+            margin-top: 5px;
+            background-color: #f8f9fa;
+            border-right: 1px solid #ddd;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar h4 {
+            color: #495057;
+            margin-bottom: 30px;
+            font-size: 1.5rem;
+        }
+
+        .sidebar a {
+            display: block;
+            padding: 12px 20px;
+            color: #495057;
+            text-decoration: none;
+            font-size: 1.1rem;
+            border-bottom: 1px solid #ddd;
+            transition: background-color 0.3s;
+        }
+
+        .sidebar a:hover {
+            background-color: #007bff;
+            color: #fff;
+        }
+    /* 搜索框样式 */
+    input[type="text"], input[type="number"], select {
+        width: 100%;
+        padding: 12px;
+        font-size: 1rem;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        margin-bottom: 15px;
+        transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    /* 主内容区域 */
+        .content {
+            margin-left: 260px;
+            padding: 30px;
+        }
+
+        /* 表格样式 */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .btn-edit, .btn-delete {
+            font-size: 1rem;
+            width: 100%;
+            transition: background-color 0.3s;
+        }
+
+        .btn-edit:hover {
+            background-color: #0056b3;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        /* 表单样式 */
+        .add-form {
+            margin-top: 20px;
+            display: none;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .add-form input, .add-form select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .add-form button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .add-form button:hover {
+            background-color: #0056b3;
+        }
+
+        /* 财务管理标题样式 */
+        .finance-header {
+            background-color: #007bff;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            font-size: 2rem;
+            font-weight: bold;
+            text-align: center;
+        }
+    input[type="text"]:focus, input[type="number"]:focus, select:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 8px rgba(0, 123, 255, 0.5);
+    }
+
+    /* 按钮样式 */
+    button {
+        padding: 12px 20px;
+        font-size: 1rem;
+        color: white;
+        background-color: #007bff;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.3s, box-shadow 0.3s;
+    }
+
+    button:hover {
+        background-color: #0056b3;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    /* 搜索框和按钮容器 */
+    #tableSearchContainer, #searchContainer {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    #tableSearchContainer input, #searchContainer input {
+        width: 80%;
+        margin-right: 10px;
+    }
+
+    /* 添加按钮样式 */
+    #addTableBtn, #addRoomBtn {
+        width: 20%;
+        font-size: 1rem;
+        padding: 12px;
+        background-color: #28a745;
+        border: none;
+        border-radius: 8px;
+        color: white;
+        transition: background-color 0.3s;
+    }
+
+    #addTableBtn:hover, #addRoomBtn:hover {
+        background-color: #218838;
+    }
+
+    /* 添加表单样式 */
+    .add-form {
+        margin-top: 10px;
+        display: none;
+        padding: 20px;
+        background-color: #f8f9fa;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .add-form h4 {
+        margin-bottom: 20px;
+        color: #495057;
+        font-size: 1.5rem;
+    }
+
+    .add-form input, .add-form select {
+        width: 100%;
+        padding: 12px;
+        margin-bottom: 10px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        font-size: 1rem;
+    }
+
+    .add-form button {
+        padding: 2px;
+        width: 10%;
+        background-color: #007bff;
+        color: white;
+        font-size: 1.2rem;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+    .add-form button:hover {
+        background-color: #0056b3;
+    }
+    #tableSearchContainer, #searchContainer {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+#tableSearchContainer input, #searchContainer input {
+    width: 80%;
+    margin-right: 10px;
+}
+
+#addTableBtn, #addRoomBtn {
+    width: 10%;
+    padding: 2px;
+    background-color: #28a745;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#addTableBtn:hover, #addRoomBtn:hover {
+    background-color: #218838;
+}
+</style>
+    <div class="container-fluid">
+        <div class="sidebar">
+            <h4 class="text-center">功能菜单</h4>
+            <a href="{% url 'login' %}">首页</a>
+            <a href="{% url 'inventory_dashboard' %}">库存管理</a>
+            <a href="#">设置</a>
+        </div>
+
+        <!-- 主内容区域 -->
+        <div class="content">
+        <div class="finance-header">库存管理</div>
+
+            <!-- 下拉框 -->
+            <div class="form-group">
+                <label for="operation">选择操作</label>
+                <select class="form-control" id="operation">
+                     <option value="clear">---</option>
+                    <option value="table">餐桌</option>
+                    <option value="room">房间</option>
+                </select>
+            </div>
+
+          <!-- 搜索框（只有在选择餐桌时显示）-->
+<div id="tableSearchContainer" style="display: none;">
+    <input type="text" id="tableSearch" placeholder="输入餐桌号或座位数进行搜索" onkeyup="filterTables()">
+    <button id="addTableBtn" onclick="toggleAddForm('table')">添加</button>
+</div>
+
+<!-- 搜索框（只有在选择房间时显示）-->
+<div id="searchContainer" style="display: none;">
+    <input type="text" id="roomSearch" placeholder="输入房间号、类型或价格进行搜索" onkeyup="filterRooms()">
+    <button id="addRoomBtn" onclick="toggleAddForm('room')">添加</button>
+</div>
+
+            <!-- 添加表单 -->
+            <div id="addForm" class="add-form">
+                {% csrf_token %}
+                <h4>添加新<span id="addFormTitle">餐桌</span></h4>
+                <form id="addFormFields">
+                    <!-- 餐桌表单 -->
+                    <div id="tableFields" style="display: none;">
+                        <input type="text" id="newTableNumber" placeholder="输入餐桌号" required>
+                        <input type="number" id="newTableSeats" placeholder="输入座位数" required>
+                    </div>
+
+                    <!-- 房间表单 -->
+                    <div id="roomFields" style="display: none;">
+                        <input type="text" id="newRoomNumber" placeholder="输入房间号" required>
+                        <select id="newRoomType">
+                            <option value="99">单人房</option>
+                            <option value="199">双人房</option>
+                            <option value="399">大床房</option>
+                        </select>
+                        <input type="number" id="newRoomPrice" placeholder="输入房间价格" required>
+                    </div>
+
+                    <button type="button" onclick="saveNewItem()">保存</button>
+                </form>
+            </div>
+
+            <!-- 显示操作结果 -->
+            <div id="operationResult">
+                <p>请选择操作以查看详细信息。</p>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // 获取 CSRF token
+        function getCSRFToken() {
+            const csrfTokenElement = document.querySelector('[name="csrfmiddlewaretoken"]');
+            if (csrfTokenElement) {
+                return csrfTokenElement.value;
+            } else {
+                console.error("CSRF token not found.");
+                return '';
+            }
+        }
+
+        let tables = [
+            {% for table in tables %}
+                {
+                    table_number: '{{ table.table_number }}',
+                    seats: 4,
+                    table_status: '{{ table.table_status }}',
+                    isEditing: false
+                },
+            {% endfor %}
+        ];
+
+        let rooms = [
+            {% for room in rooms %}
+                {
+                    room_number: '{{ room.room_number }}',
+                    type: '{% if room.price == 99 %}单人房{% elif room.price == 199 %}双人房{% elif room.price == 399 %}大床房{% else %}其他类型{% endif %}',
+                    price: '{{ room.price }}',
+                    status: '{{ room.status }}',
+                    isEditing: false
+                },
+            {% endfor %}
+        ];
+ // 监听选择操作事件
+    document.getElementById('operation').addEventListener('change', function () {
+        const operation = this.value;
+
+        if (operation === 'table') {
+            // 显示餐桌相关内容
+            document.getElementById('tableSearchContainer').style.display = 'block';
+            document.getElementById('searchContainer').style.display = 'none';
+            displayTables(tables);  // 调用渲染餐桌数据函数
+        } else if (operation === 'room') {
+            // 显示房间相关内容
+            document.getElementById('searchContainer').style.display = 'block';
+            document.getElementById('tableSearchContainer').style.display = 'none';
+            displayRooms(rooms);  // 调用渲染房间数据函数
+        } else {
+            // 隐藏所有内容
+            document.getElementById('tableSearchContainer').style.display = 'none';
+            document.getElementById('searchContainer').style.display = 'none';
+            document.getElementById('operationResult').innerHTML = '<p>请选择操作以查看详细信息。</p>';
+        }
+    });
+      // 显示所有餐桌
+function displayTables(tables) {
+    let tableContent = `
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>餐桌号</th>
+                    <th>座位数</th>
+                    <th>状态</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+    tables.forEach((table, index) => {
+        let status = (table.table_status === 'vacant') ? '空闲' : '占用';
+        tableContent += `
+            <tr>
+                <td>${table.isEditing ? `<input type="text" value="${table.table_number}" id="editTableNumber-${index}">` : table.table_number}</td>
+                <td>${table.isEditing ? `<input type="number" value="${table.seats}" id="editTableSeats-${index}">` : table.seats}</td>
+                <td>${status}</td>
+                <td>
+                    <button class="btn btn-primary" onclick="editTable(${index})">${table.isEditing ? '保存' : '编辑'}</button>
+                    <button class="btn btn-danger" onclick="deleteTable(${index})">删除</button>
+                </td>
+            </tr>
+        `;
+    });
+    tableContent += `
+            </tbody>
+        </table>
+    `;
+    document.getElementById('operationResult').innerHTML = tableContent;
+}
+
+// 显示所有房间
+function displayRooms(rooms) {
+    let roomContent = `
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>房间号</th>
+                    <th>类型</th>
+                    <th>价格</th>
+                    <th>状态</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+    rooms.forEach((room, index) => {
+        let status = (room.status === 'vacant') ? '空闲' : '占用';
+        roomContent += `
+            <tr>
+                <td>${room.isEditing ? `<input type="text" value="${room.room_number}" id="editRoomNumber-${index}">` : room.room_number}</td>
+                <td>${room.isEditing ? `<input type="text" value="${room.type}" id="editRoomType-${index}">` : room.type}</td>
+                <td>${room.isEditing ? `<input type="number" value="${room.price}" id="editRoomPrice-${index}">` : room.price}</td>
+                <td>${status}</td>
+                <td>
+                    <button class="btn btn-primary" onclick="editRoom(${index})">${room.isEditing ? '保存' : '编辑'}</button>
+                    <button class="btn btn-danger" onclick="deleteRoom(${index})">删除</button>
+                </td>
+            </tr>
+        `;
+    });
+    roomContent += `
+            </tbody>
+        </table>
+    `;
+    document.getElementById('operationResult').innerHTML = roomContent;
+}
+
+
+// 编辑餐桌
+function editTable(index) {
+    const table = tables[index];
+    if (table.isEditing) {
+        // 获取修改后的数据
+        const updatedTableNumber = document.getElementById(`editTableNumber-${index}`).value;
+        const updatedTableSeats = document.getElementById(`editTableSeats-${index}`).value;
+
+        // 更新餐桌数据（只更新需要的字段）
+        const updatedTable = {
+            table_number: updatedTableNumber,
+            seats: updatedTableSeats
+        };
+
+        // 发送更新请求到后端
+        updateTableInDatabase(updatedTable).then(() => {
+            // 更新成功后，更新数据并关闭编辑模式
+            table.table_number = updatedTableNumber;
+            table.seats = updatedTableSeats;
+            table.isEditing = false;
+            // 刷新页面以显示更新后的数据
+            displayTables(tables);
+        }).catch(error => {
+            console.error('更新失败:', error);
+            alert('更新过程中发生错误');
+        });
+    } else {
+        // 进入编辑模式
+        table.isEditing = true;
+    }
+
+    // 刷新页面以显示更新后的数据
+    displayTables(tables);
+}
+
+// 编辑房间
+function editRoom(index) {
+    const room = rooms[index];
+
+    if (room.isEditing) {
+        // 获取修改后的数据
+        const updatedRoomNumber = document.getElementById(`editRoomNumber-${index}`).value;
+        const updatedRoomType = document.getElementById(`editRoomType-${index}`).value;
+        const updatedRoomPrice = document.getElementById(`editRoomPrice-${index}`).value;
+
+        // 更新房间数据（只更新需要的字段）
+        const updatedRoom = {
+            room_number: updatedRoomNumber,
+            type: updatedRoomType,
+            price: updatedRoomPrice
+        };
+
+        // 发送更新请求到后端
+        updateRoomInDatabase(updatedRoom).then(() => {
+            // 更新成功后，更新数据并关闭编辑模式
+            room.room_number = updatedRoomNumber;
+            room.type = updatedRoomType;
+            room.price = updatedRoomPrice;
+            room.isEditing = false;
+            // 刷新页面以显示更新后的数据
+            displayRooms(rooms);
+        }).catch(error => {
+            console.error('更新失败:', error);
+            alert('更新过程中发生错误');
+        });
+    } else {
+        // 进入编辑模式
+        room.isEditing = true;
+    }
+
+    // 刷新页面以显示更新后的数据
+    displayRooms(rooms);
+}
+
+// 发送更新餐桌数据到后端
+function updateTableInDatabase(table) {
+    const csrfToken = getCSRFToken();
+
+    return fetch('{% url 'update_table' %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({
+            table_number: table.table_number,
+            seats: table.seats
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('服务器错误');
+        }
+        return response.json();  // 尝试解析为 JSON
+    })
+    .then(data => {
+        if (data.success) {
+            alert('餐桌信息更新成功');
+        } else {
+            alert('更新失败: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('更新失败:', error);
+        alert('更新过程中发生错误');
+    });
+}
+
+// 发送更新房间数据到后端
+function updateRoomInDatabase(room) {
+    const csrfToken = getCSRFToken();  // 获取 CSRF Token
+
+    return fetch('{% url 'update_room' %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken,  // CSRF Token
+        },
+        body: JSON.stringify({
+            room_number: room.room_number,
+            type: room.type,
+            price: room.price
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('服务器错误');
+        }
+        return response.json();  // 尝试解析为 JSON
+    })
+    .then(data => {
+        if (data.success) {
+            alert('房间信息更新成功');
+        } else {
+            alert('更新失败: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('更新失败:', error);
+        alert('更新过程中发生错误');
+    });
+}
+
+     function toggleAddForm(type) {
+    const addForm = document.getElementById('addForm');
+    const tableFields = document.getElementById('tableFields');
+    const roomFields = document.getElementById('roomFields');
+
+    // 显示表单
+    addForm.style.display = 'block';
+
+    // 根据类型显示对应的表单字段
+    if (type === 'table') {
+        tableFields.style.display = 'block';
+        roomFields.style.display = 'none';  // 隐藏房间表单
+        document.getElementById('addFormTitle').textContent = '餐桌'; // 更新标题
+    } else if (type === 'room') {
+        tableFields.style.display = 'none';  // 隐藏餐桌表单
+        roomFields.style.display = 'block';  // 显示房间表单
+        document.getElementById('addFormTitle').textContent = '房间';  // 更新标题
+    }
+}
+
+
+        // 搜索餐桌
+        function filterTables() {
+            const searchQuery = document.getElementById('tableSearch').value.toLowerCase();
+            const filteredTables = tables.filter(table =>
+                table.table_number.toLowerCase().includes(searchQuery) ||
+                table.seats.toString().includes(searchQuery)
+            );
+            displayTables(filteredTables);
+        }
+
+        // 搜索房间
+        function filterRooms() {
+            const searchQuery = document.getElementById('roomSearch').value.toLowerCase();
+            const filteredRooms = rooms.filter(room =>
+                room.room_number.toLowerCase().includes(searchQuery) ||
+                room.type.toLowerCase().includes(searchQuery) ||
+                room.price.toString().includes(searchQuery)
+            );
+            displayRooms(filteredRooms);
+        }
+
+        // 保存新餐桌或房间
+        function saveNewItem() {
+            const type = document.getElementById('addFormTitle').textContent === '餐桌' ? 'table' : 'room';
+            if (type === 'table') {
+                const newTableNumber = document.getElementById('newTableNumber').value;
+                const newTableSeats = document.getElementById('newTableSeats').value;
+
+                // 创建新餐桌对象
+                const newTable = {
+                    table_number: newTableNumber,
+                    seats: newTableSeats,
+                    table_status: 'vacant' // 假设新餐桌默认是空闲状态
+                };
+
+                tables.push(newTable);
+                displayTables(tables); // 更新表格
+            } else {
+                const newRoomNumber = document.getElementById('newRoomNumber').value;
+                const newRoomPrice = document.getElementById('newRoomPrice').value;
+                const newRoomType = document.getElementById('newRoomType').value;
+
+                // 创建新房间对象
+                const newRoom = {
+                    room_number: newRoomNumber,
+                    price: newRoomPrice,
+                    type: newRoomType,
+                    status: 'vacant' // 假设新房间默认是空闲状态
+                };
+
+                rooms.push(newRoom);
+                displayRooms(rooms); // 更新表格
+            }
+
+            // 清空输入字段并隐藏表单
+            document.getElementById('addFormFields').reset();
+            toggleAddForm();
+        }
+        // 删除餐桌
+function deleteTable(index) {
+    const table = tables[index];
+
+    if (confirm(`确定要删除餐桌 ${table.table_number} 吗？`)) {
+        // 发送删除请求到后端
+        deleteTableFromDatabase(table).then(() => {
+            // 删除成功后，更新数据并刷新页面
+            tables.splice(index, 1);  // 从数组中移除
+            displayTables(tables);  // 刷新页面
+        }).catch(error => {
+            console.error('删除失败:', error);
+            alert('删除过程中发生错误');
+        });
+    }
+}
+
+// 删除房间
+function deleteRoom(index) {
+    const room = rooms[index];
+
+    if (confirm(`确定要删除房间 ${room.room_number} 吗？`)) {
+        // 发送删除请求到后端
+        deleteRoomFromDatabase(room).then(() => {
+            // 删除成功后，更新数据并刷新页面
+            rooms.splice(index, 1);  // 从数组中移除
+            displayRooms(rooms);  // 刷新页面
+        }).catch(error => {
+            console.error('删除失败:', error);
+            alert('删除过程中发生错误');
+        });
+    }
+}
+// 发送删除餐桌数据到后端
+function deleteTableFromDatabase(table) {
+    const csrfToken = getCSRFToken();  // 获取 CSRF Token
+
+    return fetch('{% url 'delete_table' %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken,  // CSRF Token
+        },
+        body: JSON.stringify({
+            table_number: table.table_number
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('服务器错误');
+        }
+        return response.json();  // 尝试解析为 JSON
+    })
+    .then(data => {
+        if (data.success) {
+            alert('餐桌删除成功');
+        } else {
+            alert('删除失败: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('删除失败:', error);
+        alert('删除过程中发生错误');
+    });
+}
+// 发送删除房间数据到后端
+function deleteRoomFromDatabase(room) {
+    const csrfToken = getCSRFToken();  // 获取 CSRF Token
+
+    return fetch('{% url 'delete_room' %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken,  // CSRF Token
+        },
+        body: JSON.stringify({
+            room_number: room.room_number
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('服务器错误');
+        }
+        return response.json();  // 尝试解析为 JSON
+    })
+    .then(data => {
+        if (data.success) {
+            alert('房间删除成功');
+        } else {
+            alert('删除失败: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('删除失败:', error);
+        alert('删除过程中发生错误');
+    });
+}
+
+    </script>
+{% endblock %}

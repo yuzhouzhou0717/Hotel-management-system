@@ -1,0 +1,17 @@
+{% extends base_template %}
+
+{% block content %}
+<h2>为餐位 {{ table.number }} 点菜</h2>
+<form method="POST">
+    {% csrf_token %}
+    <div class="form-group">
+        <label for="food_item">菜品名称</label>
+        <input type="text" name="food_item" required class="form-control" placeholder="菜品名称">
+    </div>
+    <div class="form-group">
+        <label for="quantity">数量</label>
+        <input type="number" name="quantity" required class="form-control" min="1" value="1">
+    </div>
+    <button type="submit" class="btn btn-primary">提交订单</button>
+</form>
+{% endblock %}

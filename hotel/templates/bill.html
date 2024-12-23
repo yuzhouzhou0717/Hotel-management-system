@@ -1,0 +1,389 @@
+{% extends base_template %}
+
+{% block content %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+        /* 侧边栏样式 */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 250px;
+            margin-top: -15px;
+            background-color: #f8f9fa;
+            border-right: 1px solid #ddd;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar h4 {
+            color: #495057;
+            margin-bottom: 30px;
+            font-size: 1.5rem;
+            text-align: center;
+            padding-top: 20px;
+        }
+
+        .sidebar a {
+            display: block;
+            padding: 12px 20px;
+            color: #495057;
+            text-decoration: none;
+            font-size: 1.1rem;
+            border-bottom: 1px solid #ddd;
+            transition: background-color 0.3s;
+        }
+
+        .sidebar a:hover {
+            background-color: #007bff;
+            color: #fff;
+        }
+
+        /* 主内容区域 */
+        .content {
+            margin-left: 270px;
+            padding: 30px;
+        }
+
+        /* 标题样式 */
+        .page-header {
+            background-color: #007bff;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            font-size: 2rem;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        /* 账单表格样式 */
+        .table-bordered {
+            border: 1px solid #ddd;
+        }
+
+        .table th, .table td {
+            text-align: center;
+            padding: 12px;
+        }
+
+        .btn-success {
+            background-color: #28a745;
+            border-color: #28a745;
+            font-size: 1rem;
+        }
+
+        .btn-success:hover {
+            background-color: #218838;
+            border-color: #1e7e34;
+        }
+
+        .btn-info {
+            background-color: #17a2b8;
+            border-color: #17a2b8;
+        }
+
+        /* 已点菜品列表 */
+        .order-summary {
+            margin-top: 30px;
+        }
+
+        .order-summary ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        .order-summary li {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            background-color: #f8f9fa;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 200px;
+            }
+            .content {
+                margin-left: 220px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .sidebar {
+                width: 100%;
+                position: relative;
+            }
+            .content {
+                margin-left: 0;
+            }
+        }
+    </style>
+
+    <div class="container-fluid">
+        <!-- 侧边栏 -->
+        <div class="sidebar">
+            <h4>功能菜单</h4>
+            <a href="{% url 'login' %}">首页</a>
+            <a href="{% url 'catering_dashboard' %}">餐饮管理</a>
+            <a href="{% url 'customer_seat' %}">顾客就座</a>
+            <a href="{% url 'dish' %}">点菜</a>
+            <a href="{% url 'bills_view' %}">结账</a>
+        </div>
+
+        <!-- 主内容区域 -->
+        <div class="content">
+            <div class="page-header">
+                <h2>账单列表</h2>
+            </div>
+
+            <!-- 查看已结账订单按钮 -->
+            <button class="btn btn-info" onclick="loadPaidBills()">查看已结账订单</button>
+
+            <!-- 显示已结账账单的区域 -->
+            <div id="paid-bills-container" style="margin-top: 20px;">
+                <!-- 已结账账单会在这里加载 -->
+            </div>
+
+            {% if bills %}
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>餐桌号</th>
+                            <th>顾客姓名</th>
+                            <th>总金额</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for bill in bills %}
+                            <tr>
+                                <td>{{ bill.table_number }}</td>
+                                <td>{{ bill.customer_name }}</td>
+                                <td>¥{{ bill.total_amount }}</td>
+                                <td>
+                                    <button class="btn btn-success" onclick="payBill({{ bill.table_number }})">结账</button>
+                                </td>
+                            </tr>
+
+                            <!-- 查看已点菜品的折叠内容 -->
+                            <tr>
+                                <td colspan="4">
+                                    <!-- 折叠按钮 -->
+                                    <button class="btn btn-info" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ bill.table_id }}" aria-expanded="false" aria-controls="collapse-{{ bill.table_id }}">
+                                        查看菜品
+                                    </button>
+
+                                    <!-- 折叠内容 -->
+                                    <div class="collapse" id="collapse-{{ bill.table_id }}">
+                                        <div class="order-summary" id="order-summary-{{ bill.table_id }}">
+                                            <!-- 已点菜品将通过AJAX加载 -->
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>当前无未结账账单</p>
+            {% endif %}
+        </div>
+    </div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script>
+        function payBill(tableNumber) {
+            if (confirm("确定结账并清空该餐桌的订单吗？")) {
+                fetch(`/hotel/bill/clear_orders/${tableNumber}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({
+                        'table_number': tableNumber
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert("结账成功！");
+                        location.reload();  // 刷新页面，显示更新后的账单
+                    } else {
+                        alert("结账失败！");
+                    }
+                })
+                .catch(error => {
+                    alert("请求失败：" + error);
+                });
+            }
+        }
+
+        // 加载已结账订单的函数
+        function loadPaidBills() {
+            fetch('/hotel/bill/get_paid_bills/')
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('paid-bills-container');
+                    container.innerHTML = '';  // 清空现有内容
+
+                    if (data.success) {
+                        const table = document.createElement('table');
+                        table.className = 'table table-bordered';
+                        const thead = document.createElement('thead');
+                        const headerRow = document.createElement('tr');
+                        headerRow.innerHTML = `
+                            <th>餐桌号</th>
+                            <th>顾客姓名</th>
+                            <th>总金额</th>
+<th>创建时间</th>
+                            <th>结账时间</th>
+ <th>操作</th>
+                        `;
+                        thead.appendChild(headerRow);
+                        table.appendChild(thead);
+
+                        const tbody = document.createElement('tbody');
+                        data.paid_bills.forEach(bill => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${bill.table_id}</td>
+                                <td>${bill.customer_name}</td>
+                                <td>¥${bill.total_amount}</td>
+                                <td>${formatDate(bill.order_created_at)}</td>
+                                <td>${formatDate(bill.checkout_time)}</td>  <!-- 格式化时间 -->
+<td>
+      <button class="btn btn-print" onclick="generatePDF(${bill.table_id}, '${bill.customer_name}', ${bill.total_amount}, '${bill.checkout_time}')">打印</button>
+                                </td>
+                            `;
+                            tbody.appendChild(row);
+                        });
+
+                        table.appendChild(tbody);
+                        container.appendChild(table);
+                    } else {
+                        container.innerHTML = '<p>没有已结账订单</p>';
+                    }
+                })
+                .catch(error => {
+                    alert('加载已结账订单失败：' + error);
+                });
+        }
+// 生成PDF的函数
+// 生成PDF的函数
+
+// 生成PDF的函数
+function generatePDF(tableNumber, customerName, totalAmount, checkoutTime) {
+    const { jsPDF } = window.jspdf;  // 获取jsPDF类
+
+    // 确保 checkoutTime 是有效的 Date 对象
+    const checkoutDate = new Date(checkoutTime);
+
+    // 检查日期是否有效
+    if (isNaN(checkoutDate)) {
+        alert('Invalid checkout time!');
+        return;
+    }
+   // 打印日期到控制台
+    console.log("Checkout Time: ", formatDate1(checkoutDate));
+    // 创建一个新的PDF实例
+    const doc = new jsPDF();
+
+    // 使用默认字体（支持英文）
+    doc.setFontSize(18);
+    doc.setTextColor(0, 102, 204);  // 设置蓝色文字
+    doc.text('Bill', 105, 20, { align: 'center' });  // 居中显示标题
+
+    // 添加餐桌号、顾客姓名、总金额和结账时间信息
+    doc.setFontSize(14);
+    doc.setTextColor(0, 0, 0);  // 设置黑色文字
+    doc.text(`Table Number: ${tableNumber}`, 20, 40);
+    doc.text(`Customer Name: ${customerName}`, 20, 50);
+    doc.text(`Total Amount: ¥${totalAmount}`, 20, 60);
+    doc.text(`Checkout Time: ${formatDate1(checkoutDate)}`, 20, 70);
+
+    // 绘制一个边框
+    doc.setDrawColor(0, 0, 0);  // 黑色边框
+    doc.setLineWidth(0.5);
+    doc.rect(10, 30, 190, 70);  // 绘制一个矩形框住账单信息
+
+    // 绘制一个分隔线
+    doc.setLineWidth(1);
+    doc.line(10, 80, 200, 80);  // 横线分隔
+
+    // 添加打印日期
+    doc.setFontSize(10);
+    doc.text(`Print Date: ${formatDate1(new Date())}`, 20, 90);
+
+    // 生成PDF并下载
+    doc.save(`Bill_${tableNumber}.pdf`);
+}
+
+
+
+// 格式化日期为 “YYYY-MM-DD HH:MM:SS” 格式
+function formatDate1(dateString) {
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+}
+
+// 格式化日期为 “YYYY年MM月DD日 HH:MM:SS” 格式
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+
+    return `${year}年${month}月${day}日 ${hours}:${minutes}:${seconds}`;
+}
+ document.addEventListener('DOMContentLoaded', function () {
+    {% for bill in bills %}
+        document.querySelector(`[data-bs-target="#collapse-{{ bill.table_id }}"]`).addEventListener('click', function () {
+            loadOrderSummary({{ bill.table_id }});  // 使用正确的 table_id
+        });
+    {% endfor %}
+});
+
+
+       function loadOrderSummary(table_id) {
+    console.log("请求的餐桌 ID: ", table_id);  // 调试用，查看传递的餐桌 ID 是否正确
+    fetch(`/hotel/get_order_summary/?table_id=${table_id}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const orderSummaryElement = document.getElementById(`order-summary-${table_id}`);
+                orderSummaryElement.innerHTML = '';  // 清空现有内容
+
+                const ul = document.createElement('ul');
+                data.order_items.forEach(item => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `${item.dish_name} × ${item.quantity} - ¥${item.price * item.quantity}`;
+                    ul.appendChild(li);
+                });
+                orderSummaryElement.appendChild(ul);
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => {
+            alert('加载点餐信息失败：' + error);
+        });
+}
+
+    </script>
+
+{% endblock %}

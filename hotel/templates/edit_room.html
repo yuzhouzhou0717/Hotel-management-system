@@ -1,0 +1,259 @@
+{% extends base_template %}
+
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 侧边栏 -->
+    <div class="sidebar">
+        <h4 class="text-center">功能菜单</h4>
+        <a href="{% url 'login' %}">首页</a>
+        <a href="{% url 'housing_dashboard' %}">房间管理</a>
+        <a href="{% url 'add_room' %}">顾客入住</a>
+        <a href="#">设置</a>
+    </div>
+
+    <!-- 主内容区域 -->
+    <div class="content">
+        <div class="card shadow-lg p-4 mb-5 rounded-3">
+            <h2 class="text-center mb-4 text-primary">编辑房间信息</h2>
+
+            {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-danger" role="alert">
+                    {{ message }}
+                </div>
+            {% endfor %}
+            {% endif %}
+
+            <form method="post" class="form-container">
+                {% csrf_token %}
+                <div class="form-group mb-4">
+                    <label for="name" class="font-weight-bold">顾客姓名</label>
+                    <input type="text" class="form-control input-shadow" id="name" name="name" value="{{ form.name.value }}" required placeholder="请输入顾客姓名">
+                </div>
+                <div class="form-group mb-4">
+                    <label for="id_card" class="font-weight-bold">身份证号码</label>
+                    <input type="text" class="form-control input-shadow" id="id_card" name="id_card" value="{{ form.id_card.value }}" required placeholder="请输入身份证号码">
+                </div>
+                <div class="form-group mb-4">
+                    <label for="phone_number" class="font-weight-bold">电话号码</label>
+                    <input type="text" class="form-control input-shadow" id="phone_number" name="phone_number" value="{{ form.phone_number.value }}" required placeholder="请输入电话号码">
+                </div>
+                <div class="form-group mb-4">
+                    <label for="check_in_date" class="font-weight-bold">入住日期</label>
+                    <input type="date" class="form-control input-shadow" id="check_in_date" name="check_in_date" value="{{ form.check_in_date.value|date:'Y-m-d' }}" required onchange="calculatePrice()">
+                </div>
+                <div class="form-group mb-4">
+                    <label for="check_out_date" class="font-weight-bold">预定离店日期</label>
+                    <input type="date" class="form-control input-shadow" id="check_out_date" name="check_out_date" value="{{ form.check_out_date.value|date:'Y-m-d' }}" required onchange="calculatePrice()">
+                </div>
+                <div class="form-group mb-4">
+                    <label for="room_number" class="font-weight-bold">房间号</label>
+                    <input type="text" class="form-control input-shadow" id="room_number" name="room_number" value="{{ form.room_number.value }}" required readonly>
+                </div>
+                <div class="form-group mb-4">
+                    <label for="price" class="font-weight-bold">房间单价</label>
+                    <input type="text" class="form-control input-shadow" id="price" name="price" value="¥{{ room.price }}" required readonly>
+                </div>
+                <div class="form-group mb-4">
+                    <label for="paid_amount" class="font-weight-bold">总房费</label>
+                    <input type="text" class="form-control input-shadow" id="paid_amount" name="paid_amount" value="¥0.00" required readonly>
+                </div>
+                <div class="form-group mb-4">
+                    <label for="status" class="font-weight-bold">房间状态</label>
+                    {{ form.status }}
+                </div>
+
+                <!-- 退房按钮 -->
+                <button type="button" class="btn btn-danger mt-3" data-bs-toggle="modal" data-bs-target="#checkoutModal">
+                    <i class="bi bi-house-door"></i> 退房
+                </button>
+
+                <button type="submit" class="btn btn-primary mt-3">提交</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 退房确认模态框 -->
+<div class="modal fade" id="checkoutModal" tabindex="-1" aria-labelledby="checkoutModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="checkoutModalLabel">确认退房</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                您确定要退房吗？此操作将清除房间的顾客信息并恢复为空房。
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <form method="post" style="display:inline-block;">
+                    {% csrf_token %}
+                    <input type="hidden" name="checkout" value="true">
+                    <button type="submit" class="btn btn-danger">确定退房</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap 5 JavaScript 引入 -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-KyZXEJf+qLkNFN+XQkWg4dQ9eVr5e3IbeXpG9hXG7yX5KpkmCuZqUGjtpWRqY/5E" crossorigin="anonymous"></script>
+
+<!-- Bootstrap Icons 引入 -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+
+<script>
+// 计算房费
+function calculatePrice() {
+    var checkInDate = new Date(document.getElementById('check_in_date').value);
+    var checkOutDate = new Date(document.getElementById('check_out_date').value);
+     var pricePerDay = parseFloat('{{ room.price }}'); // 从房间模型中获取价格
+
+
+    if (checkInDate && checkOutDate) {
+        var timeDiff = checkOutDate - checkInDate;
+        var days = timeDiff / (1000 * 3600 * 24); // 转换为天数
+        if (days >= 1) {
+            var totalPrice = days * pricePerDay;
+            document.getElementById('paid_amount').value = '¥' + totalPrice.toFixed(2);
+        } else {
+            document.getElementById('paid_amount').value = '¥0.00';
+        }
+    }
+}
+
+// 页面加载时初始化房费计算
+document.addEventListener('DOMContentLoaded', function () {
+    calculatePrice();
+});
+</script>
+
+<style>
+/* 侧边栏样式 */
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 250px;
+    margin-top: 5px;
+    background-color: #f8f9fa;
+    border-right: 1px solid #ddd;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar h4 {
+    color: #495057;
+    margin-bottom: 30px;
+    font-size: 1.5rem;
+}
+
+.sidebar a {
+    display: block;
+    padding: 12px 20px;
+    color: #495057;
+    text-decoration: none;
+    font-size: 1.1rem;
+    border-bottom: 1px solid #ddd;
+    transition: background-color 0.3s;
+}
+
+.sidebar a:hover {
+    background-color: #007bff;
+    color: #fff;
+}
+
+/* 主内容区域 */
+.content {
+    margin-left: 270px; /* 偏移以适应侧边栏 */
+    padding: 20px;
+}
+
+@media (max-width: 768px) {
+    .sidebar {
+        width: 200px;
+    }
+    .content {
+        margin-left: 220px;
+    }
+}
+
+@media (max-width: 576px) {
+    .sidebar {
+        width: 100%;
+        position: relative;
+    }
+    .content {
+        margin-left: 0;
+    }
+}
+
+/* 卡片样式 */
+.card {
+    background-color: #fff;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    transition: 0.3s ease-in-out;
+    border-radius: 15px;
+}
+
+.card:hover {
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    transform: scale(1.02);
+}
+
+/* 表单输入框样式 */
+.input-shadow {
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: 0.3s ease-in-out;
+}
+
+.input-shadow:focus {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    border-color: #007bff;
+}
+
+/* 按钮样式 */
+.btn {
+    transition: background-color 0.3s, transform 0.3s;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+    transform: scale(1.05);
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+    transform: scale(1.05);
+}
+
+.btn:focus {
+    outline: none;
+}
+
+/* 提示框样式 */
+.alert {
+    transition: opacity 1s ease-out;
+    font-size: 1.1rem;
+    padding: 15px;
+}
+
+/* 退房按钮样式 */
+.btn-danger i {
+    margin-right: 8px;
+}
+</style>
+
+{% endblock %}

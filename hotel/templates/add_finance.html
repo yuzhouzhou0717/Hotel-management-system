@@ -1,0 +1,159 @@
+{% extends base_template %}
+
+
+{% block content %}
+
+    <div class="container-fluid">
+        <!-- 侧边栏 -->
+
+<style>
+    /* 侧边栏样式 */
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 250px;
+        margin-top: 5px;
+        background-color: #f8f9fa;
+        border-right: 1px solid #ddd;
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .sidebar h4 {
+        color: #495057;
+        margin-bottom: 30px;
+        font-size: 1.5rem;
+    }
+
+    .sidebar a {
+        display: block;
+        padding: 12px 20px;
+        color: #495057;
+        text-decoration: none;
+        font-size: 1.1rem;
+        border-bottom: 1px solid #ddd;
+        transition: background-color 0.3s;
+    }
+
+    .sidebar a:hover {
+        background-color: #007bff;
+        color: #fff;
+    }
+
+    /* 主内容区域 */
+    .content {
+        margin-left: 250px; /* 为侧边栏留出空间 */
+        padding: 30px;
+    }
+
+    /* 表单样式 */
+    .form-group {
+        margin-bottom: 15px;
+    }
+     /* 财务管理标题样式 */
+  .finance-header {
+    background-color: #007bff;
+    color: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    font-size: 2rem;
+    font-weight: bold;
+    text-align: center;
+  }
+</style>
+        <div class="sidebar">
+            <h4 class="text-center">功能菜单</h4>
+            <a href="{% url 'login' %}">首页</a>
+            <a href="{% url 'finance_dashboard' %}">财务管理</a>
+            <a href="{% url 'add_finance' %}">增加财务记录</a>
+                    <a href="{% url 'archive_finances' %}">归档备份</a>
+            <a href="#">设置</a>
+        </div>
+
+        <!-- 主内容区域 -->
+        <div class="content">
+  <div class="finance-header">增加财务记录</div>
+            <!-- 表单 -->
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="finance_type">财务类型</label>
+                    {{ form.finance_type }}
+                </div>
+                 <div class="form-group">
+                    <label for="responsible_person">负责人</label>
+                    <input type="text" id="responsible_person" name="responsible_person" class="form-control" value="{{ form.responsible_person.value }}" readonly/>
+                </div>
+                <div class="form-group">
+                    <label for="details">详情</label>
+                    {{ form.details }}
+                </div>
+
+                <div class="form-group">
+                    <label for="amount">金额</label>
+                    {{ form.amount }}
+                </div>
+ <div class="form-group">
+        <label for="additional_service_amount">附加服务费用</label>
+        <input type="number" id="id_additional_service_amount" name="additional_service_amount" step="0.01" class="form-control" value="{{ form.additional_service_amount.value|default_if_none:0 }}">
+    </div>
+    <div class="form-group">
+        <label for="total_amount">总金额</label>
+        <input type="text" id="id_total_amount" class="form-control" value="{{ form.total_amount.value|default_if_none:0 }}" readonly>
+    </div>
+                <button type="submit" class="btn btn-primary">保存财务记录</button>
+            </form>
+        </div>
+    <script>
+    // 在财务类型变化时更新负责人字段
+    document.getElementById('id_finance_type').addEventListener('change', function() {
+        var financeType = this.value;
+        var responsiblePersonField = document.getElementById('responsible_person');
+
+        if (financeType === 'housing') {
+            responsiblePersonField.value = 'y1'; // 设置负责人为 y1
+        } else if (financeType === 'meal') {
+            responsiblePersonField.value = 'y2'; // 设置负责人为 y2
+        } else {
+            responsiblePersonField.value = ''; // 如果没有选择类型，清空负责人
+        }
+    });
+
+    // 页面加载时，如果已有财务类型，初始化负责人字段
+    window.onload = function() {
+        var financeType = document.getElementById('id_finance_type').value;
+        var responsiblePersonField = document.getElementById('responsible_person');
+
+        if (financeType === 'housing') {
+            responsiblePersonField.value = 'y1';
+        } else if (financeType === 'meal') {
+            responsiblePersonField.value = 'y2';
+        }
+    };
+      // 在页面加载时初始化总金额
+        window.onload = function() {
+            updateTotalAmount();  // 页面加载时计算一次总金额
+        };
+
+        // 当金额或附加服务费用变化时更新总金额
+        document.getElementById('id_additional_service_amount').addEventListener('input', updateTotalAmount);
+        document.getElementById('id_amount').addEventListener('input', updateTotalAmount);
+
+        // 更新总金额的函数
+        function updateTotalAmount() {
+            var amount = parseFloat(document.getElementById('id_amount').value) || 0;  // 获取金额并转为数字，若为空则为0
+            var additionalServiceAmount = parseFloat(document.getElementById('id_additional_service_amount').value) || 0;  // 获取附加服务费用并转为数字，若为空则为0
+
+            var totalAmount = amount + additionalServiceAmount;  // 计算总金额
+
+            document.getElementById('id_total_amount').value = totalAmount.toFixed(2);  // 显示总金额，保留两位小数
+        }
+
+</script>
+
+    </div>
+{% endblock %}
+

@@ -1,0 +1,68 @@
+{% extends 'manage_base.html' %}
+
+{% block content %}
+    <div class="container-fluid">
+        <!-- 侧边栏 -->
+        <div class="sidebar">
+            <h4 class="text-center">功能菜单</h4>
+            <a href="{% url 'login' %}">首页</a>
+            <a href="{% url 'housing_dashboard' %}">房间管理</a>
+            <a href="{% url 'catering_dashboard' %}">就餐管理</a>
+            <a href="{% url 'finance_dashboard' %}">财务管理</a>
+            <a href="#">设置</a>
+        </div>
+
+        <!-- 主内容区域 -->
+        <div class="content" style="margin-left: 250px; padding: 30px;">
+            <!-- 卡片样式的欢迎信息 -->
+            <div class="card shadow-lg" style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                <div class="card-body text-center">
+                    <h2 class="card-title" style="font-size: 2rem; color: #007bff; font-weight: bold;">欢迎访问本系统</h2>
+                    <p class="card-text" style="font-size: 1.2rem; color: #333;">您已成功登录为总经理身份，欢迎访问总经理管理页面。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+     <style>
+        /* 侧边栏样式 */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 250px;
+            margin-top: 5px;
+            background-color: #f8f9fa;
+            border-right: 1px solid #ddd;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar h4 {
+            color: #495057;
+            margin-bottom: 30px;
+            font-size: 1.5rem;
+        }
+
+        .sidebar a {
+            display: block;
+            padding: 12px 20px;
+            color: #495057;
+            text-decoration: none;
+            font-size: 1.1rem;
+            border-bottom: 1px solid #ddd;
+            transition: background-color 0.3s;
+        }
+
+        .sidebar a:hover {
+            background-color: #007bff;
+            color: #fff;
+        }
+
+        /* 主内容区域 */
+        .content {
+            margin-left: 250px;
+            padding: 30px;
+        }
+    </style>
+    </div>
+{% endblock %}

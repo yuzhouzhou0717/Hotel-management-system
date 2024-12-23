@@ -1,0 +1,305 @@
+{% extends base_template %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 侧边栏 -->
+    <div class="sidebar">
+        <h4 class="text-center">功能菜单</h4>
+        <a href="{% url 'login' %}">首页</a>
+        <a href="{% url 'housing_dashboard' %}">房间管理</a>
+        <a href="{% url 'add_room' %}">顾客入住</a>
+        <a href="#">设置</a>
+    </div>
+
+    <!-- 主内容区域 -->
+    <div class="content">
+        <div class="card shadow-lg p-4 mb-5 rounded-3">
+            <h2 class="text-center mb-4 text-primary">增加住房信息</h2>
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-group mb-4">
+                    <label for="name" class="font-weight-bold">顾客姓名</label>
+                    <input type="text" class="form-control input-shadow" id="name" name="name" required placeholder="请输入顾客姓名">
+                </div>
+                <div class="form-group mb-4">
+                    <label for="id_card" class="font-weight-bold">身份证号码</label>
+                    <input type="text" class="form-control input-shadow" id="id_card" name="id_card" required placeholder="请输入身份证号码">
+                </div>
+                <div class="form-group mb-4">
+                    <label for="phone_number" class="font-weight-bold">电话号码</label>
+                    <input type="text" class="form-control input-shadow" id="phone_number" name="phone_number" required placeholder="请输入电话号码">
+                </div>
+                <div class="form-group mb-4">
+                    <label for="check_in_date" class="font-weight-bold">入住日期</label>
+                    <input type="date" class="form-control input-shadow" id="check_in_date" name="check_in_date" required>
+                </div>
+                <div class="form-group mb-4">
+                    <label for="check_out_date" class="font-weight-bold">预定离店日期</label>
+                    <input type="date" class="form-control input-shadow" id="check_out_date" name="check_out_date" required onchange="calculateTotalPrice()">
+                </div>
+
+                <!-- 新增的房间价格选择单选框 -->
+                <div class="form-group mb-4">
+                    <label class="font-weight-bold">选择房间规格</label>
+                    <div>
+                        <input type="radio" id="price_99" name="room_price_group" value="99" onchange="filterRoomsByPrice()"> 单人间
+                        <input type="radio" id="price_199" name="room_price_group" value="199" onchange="filterRoomsByPrice()"> 双床间
+                        <input type="radio" id="price_399" name="room_price_group" value="399" onchange="filterRoomsByPrice()"> 大床间
+                    </div>
+                </div>
+
+                <!-- 房间选择下拉框 -->
+                <div class="form-group mb-4">
+                    <label for="room_number" class="font-weight-bold">房间号</label>
+                    <select class="form-control input-shadow" id="room_number" name="room_number" required onchange="updateRoomPrice()">
+                        <option value="">选择房间</option>
+                        {% for room in available_rooms %}
+                            <option value="{{ room.room_number }}" data-price="{{ room.price }}">{{ room.room_number }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group mb-4">
+                    <label for="room_price" class="font-weight-bold">房间单价 (元/天)</label>
+                    <input type="text" class="form-control input-shadow" id="room_price" name="room_price" readonly>
+                </div>
+                <div class="form-group mb-4">
+                    <label for="total_price" class="font-weight-bold">总房费</label>
+                    <input type="text" class="form-control input-shadow" id="total_price" name="total_price" readonly value="¥0.00">
+                </div>
+                <div class="d-flex justify-content-center mt-4">
+                    <button type="submit" class="btn btn-primary btn-lg w-50">提交</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// 根据选择的价位过滤房间
+function filterRoomsByPrice() {
+    // 获取选择的房间价位
+    var selectedPrice = document.querySelector('input[name="room_price_group"]:checked').value;
+    var roomSelect = document.getElementById('room_number');
+
+    // 清空现有的房间选项
+    roomSelect.innerHTML = '<option value="">选择房间</option>';
+
+    // 获取符合价位条件的房间，并添加到下拉框中
+    {% for room in available_rooms %}
+        if ({{ room.price }} == selectedPrice) {
+            var option = document.createElement('option');
+            option.value = "{{ room.room_number }}";
+            option.textContent = "{{ room.room_number }}";
+            option.setAttribute('data-price', "{{ room.price }}");
+            roomSelect.appendChild(option);
+        }
+    {% endfor %}
+}
+
+   // 设置入住日期的最小日期为今天
+    document.addEventListener("DOMContentLoaded", function() {
+        var today = new Date().toISOString().split('T')[0]; // 获取今天的日期，格式为YYYY-MM-DD
+        var checkInDateInput = document.getElementById('check_in_date');
+        var checkOutDateInput = document.getElementById('check_out_date');
+
+        // 设置入住日期的最小值为今天
+        checkInDateInput.setAttribute('min', today);
+
+       // 设置初始离店日期的最小值为今天 + 1
+        var tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        checkOutDateInput.setAttribute('min', tomorrow.toISOString().split('T')[0]);
+
+        // 当入住日期改变时，更新离店日期的最小值
+        checkInDateInput.addEventListener('change', function() {
+            var checkInDate = new Date(checkInDateInput.value);
+            if (checkInDate) {
+                // 离店日期的最小值为入住日期后一天
+                var nextDay = new Date(checkInDate);
+                nextDay.setDate(checkInDate.getDate() + 1);
+                checkOutDateInput.setAttribute('min', nextDay.toISOString().split('T')[0]);
+
+                // 如果当前的离店日期小于新设置的最小值，则清空离店日期
+                if (new Date(checkOutDateInput.value) < nextDay) {
+                    checkOutDateInput.value = ""; // 清空选择的离店日期
+                }
+            }
+        });
+    });
+
+    // 计算房费
+function updateRoomPrice() {
+    var roomSelect = document.getElementById('room_number');
+    var selectedOption = roomSelect.options[roomSelect.selectedIndex];
+
+        // 获取选中的房间价格
+    var roomPrice = selectedOption.getAttribute('data-price');
+    document.getElementById('room_price').value = roomPrice;
+    calculateTotalPrice(); // 更新总房费
+}
+
+// 计算总房费
+function calculateTotalPrice() {
+    var checkInDate = new Date(document.getElementById('check_in_date').value);
+    var checkOutDate = new Date(document.getElementById('check_out_date').value);
+    var pricePerDay = parseFloat(document.getElementById('room_price').value);
+
+    if (checkInDate && checkOutDate && pricePerDay) {
+        var timeDiff = checkOutDate - checkInDate;
+        var days = timeDiff / (1000 * 3600 * 24); // 转换为天数
+        if (days >= 1) {
+            var totalPrice = days * pricePerDay;
+            document.getElementById('total_price').value = '¥' + totalPrice.toFixed(2);
+        } else {
+            document.getElementById('total_price').value = '¥0.00';
+        }
+    }
+}
+</script>
+<style>
+/* 侧边栏样式 */
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 250px;
+    margin-top: 5px;
+    background-color: #f8f9fa;
+    border-right: 1px solid #ddd;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar h4 {
+    color: #495057;
+    margin-bottom: 30px;
+    font-size: 1.5rem;
+}
+
+.sidebar a {
+    display: block;
+    padding: 12px 20px;
+    color: #495057;
+    text-decoration: none;
+    font-size: 1.1rem;
+    border-bottom: 1px solid #ddd;
+    transition: background-color 0.3s;
+}
+
+.sidebar a:hover {
+    background-color: #007bff;
+    color: #fff;
+}
+
+/* 主内容区域 */
+.content {
+    margin-left: 260px; /* 偏移以适应侧边栏 */
+    padding: 20px;
+}
+
+@media (max-width: 768px) {
+    .sidebar {
+        width: 200px;
+    }
+    .content {
+        margin-left: 220px;
+    }
+}
+
+@media (max-width: 576px) {
+    .sidebar {
+        width: 100%;
+        position: relative;
+    }
+    .content {
+        margin-left: 0;
+    }
+}
+
+/* 卡片样式 */
+.card {
+    background-color: #ffffff;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    border-radius: 15px;
+    transition: box-shadow 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
+
+.card:hover {
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+    transform: scale(1.02);
+}
+
+.card-body {
+    padding: 20px;
+}
+
+.card-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.card-text {
+    font-size: 1.2rem;
+}
+
+/* 输入框样式 */
+.input-shadow {
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: 0.3s ease-in-out;
+}
+
+.input-shadow:focus {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border-color: #007bff;
+}
+
+/* 按钮样式 */
+.btn {
+    transition: background-color 0.3s, transform 0.3s;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+    transform: scale(1.05);
+}
+
+/* 提示框样式 */
+.alert {
+    transition: opacity 1s ease-out;
+}
+
+/* 边框和渐变效果 */
+h2.text-primary {
+    color: #007bff;
+    {#font-weight: bold;#}
+}
+
+.form-group label {
+    font-size: 1.1rem;
+    color: #495057;
+}
+
+.form-group input,
+.form-group select {
+    font-size: 1rem;
+    padding: 10px;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+    .content {
+        margin-left: 0;
+    }
+    .sidebar {
+        width: 100%;
+        position: relative;
+    }
+}
+</style>
+
+{% endblock %}

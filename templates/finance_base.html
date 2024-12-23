@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>饭店管理系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <style>
+        /* 引入样式 */
+        /* 统一的背景色和字体 */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* 设置导航栏的背景色 */
+        .navbar {
+            background-color: #ffffff; /* 背景为白色 */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s ease;
+        }
+
+        /* 导航栏固定在顶部 */
+        .sticky-top {
+            z-index: 1000;
+        }
+
+        /* 设置品牌（饭店管理系统）字体颜色 */
+        .navbar-brand {
+            color: #333 !important;
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+
+        .navbar-brand:hover {
+            color: #007bff !important; /* 悬停时变为蓝色 */
+        }
+
+        /* 使"住房管理"标题居中 */
+        .navbar-title1 {
+            text-align: center;
+            width: 100%;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #000;
+            padding-top: 10px;
+        }
+
+        /* "你好"标题左对齐并调整位置 */
+        .navbar-title {
+            font-size: 1rem;
+            font-weight: bold;
+            color: #000;
+            width: 70px;
+            margin-right: -25px;
+            padding-top: 10px;
+            margin-left: 20px;
+        }
+
+        /* 导航栏链接样式 */
+        .nav-item .nav-link {
+            color: #555;
+            padding: 10px 15px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* 悬停时链接变为蓝色 */
+        .nav-item .nav-link:hover {
+            color: #007bff;
+            background-color: rgba(0, 123, 255, 0.1);
+        }
+
+        /* 设置下拉菜单的样式 */
+        .dropdown-menu {
+            background-color: #ffffff;
+            border-radius: 8px;
+        }
+
+        .dropdown-item {
+            color: #555;
+            padding: 10px;
+            font-size: 1rem;
+        }
+
+        .dropdown-item:hover {
+            background-color: #007bff;
+            color: #ffffff;
+        }
+
+        /* 自定义搜索框和用户信息对齐 */
+        .navbar-nav {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+        }
+
+        .navbar-nav .ms-auto {
+            margin-left: auto;
+        }
+
+        /* 搜索框的样式 */
+        .search-form {
+            width: 300px;
+            border-radius: 20px;
+            padding-left: 15px;
+        }
+
+        .search-form::placeholder {
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        /* 搜索按钮样式 */
+        .btn-outline-success {
+            border-radius: 20px;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn-outline-success:hover {
+            background-color: #28a745;
+            color: #fff;
+        }
+
+        /* 整体容器的样式 */
+        .container {
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg bg-body-tertiary sticky-top">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="{% url 'home' %}">饭店管理系统</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+                aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <!-- "住房管理"标题居中 -->
+        <h2 class="navbar-title1">财务管理</h2>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <!-- "你好"标题靠左并与下拉框左对齐 -->
+                <li class="navbar-title">你好！</li>
+                <li class="nav-item dropdown">
+                    {% if request.user.is_authenticated %}
+                        <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"
+                           aria-expanded="false">{{ request.user.username }}</a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#">我的</a></li>
+                            <li><a class="dropdown-item" href="#">收件箱</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'logout' %}">退出登录</a></li>
+                        </ul>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'login' %}">登录/注册</a>
+                        </li>
+                    {% endif %}
+                </li>
+            </ul>
+            <div>
+                <form class="d-flex" role="search" method="get" action="">
+                    <input class="form-control me-2 search-form" type="search" name="q" placeholder="输入关键字搜索"
+                           aria-label="Search">
+                    <button class="btn btn-outline-success" type="submit">Search</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    {% block content %}{% endblock %}
+</div>
+<div class="container">
+    {% block content1 %}{% endblock %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+        crossorigin="anonymous"></script>
+</body>
+</html>

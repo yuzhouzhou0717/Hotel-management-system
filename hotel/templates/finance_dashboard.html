@@ -1,0 +1,324 @@
+{% extends base_template %}
+
+
+{% block content %}
+<style>
+  /* 侧边栏样式 */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 250px;
+    margin-top: 5px;
+    background-color: #f8f9fa;
+    border-right: 1px solid #ddd;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  }
+
+  .sidebar h4 {
+    color: #495057;
+    margin-bottom: 30px;
+    font-size: 1.5rem;
+  }
+
+  .sidebar a {
+    display: block;
+    padding: 12px 20px;
+    color: #495057;
+    text-decoration: none;
+    font-size: 1.1rem;
+    border-bottom: 1px solid #ddd;
+    transition: background-color 0.3s;
+  }
+
+  .sidebar a:hover {
+    background-color: #007bff;
+    color: #fff;
+  }
+
+  /* 主内容区域 */
+  .content {
+    margin-left: 260px;
+    padding: 30px;
+  }
+
+  /* 财务管理标题样式 */
+  .finance-header {
+    background-color: #007bff;
+    color: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    font-size: 2rem;
+    font-weight: bold;
+    text-align: center;
+  }
+
+  /* 表格样式 */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th, td {
+    padding: 15px;
+    text-align: center;
+    border: 1px solid #ddd;
+  }
+
+  th {
+    background-color: #007bff;
+    color: white;
+  }
+
+  .btn-edit, .btn-delete {
+    font-size: 1rem;
+    width: 100%;
+    transition: background-color 0.3s;
+  }
+
+  .btn-edit:hover {
+    background-color: #0056b3;
+    color: white;
+  }
+
+  .btn-delete:hover {
+    background-color: #dc3545;
+    color: white;
+  }
+#clear-date {
+    margin-bottom: -10px;
+}
+
+</style>
+
+<div class="container-fluid">
+    <!-- 侧边栏 -->
+    <div class="sidebar">
+        <h4 class="text-center">功能菜单</h4>
+        <a href="{% url 'login' %}">首页</a>
+        <a href="{% url 'finance_dashboard' %}">财务管理</a>
+        <a href="{% url 'add_finance' %}">增加财务记录</a>
+        <a href="{% url 'archive_finances' %}">归档备份</a>
+        <a href="#">设置</a>
+    </div>
+
+    <!-- 主内容区域 -->
+    <div class="content">
+        <div class="finance-header">财务管理</div>
+
+        <!-- 财务类型筛选表单 -->
+        <form method="get" class="mb-4">
+            <div class="form-group">
+                <label for="finance_type">选择财务类型</label>
+                <select id="finance_type" name="filter" class="form-control" onchange="this.form.submit()">
+                    <option value="all" {% if filter == 'all' %}selected{% endif %}>查看所有财务信息</option>
+                    <option value="住房" {% if filter == '住房' %}selected{% endif %}>查看住房财务信息</option>
+                    <option value="就餐" {% if filter == '就餐' %}selected{% endif %}>查看就餐财务信息</option>
+                </select>
+            </div>
+          <!-- 起始日期和终止日期 -->
+            <div class="form-group">
+                <label for="start_date">选择起始日期</label>
+                <input type="date" id="start_date" name="start_date" class="form-control" value="{{ start_date }}">
+            </div>
+
+            <div class="form-group">
+                <label for="end_date">选择终止日期</label>
+                <input type="date" id="end_date" name="end_date" class="form-control" value="{{ end_date }}">
+            </div>
+
+            <button type="submit" class="btn btn-primary mt-3">筛选记录</button>
+         {% if start_date or end_date %}
+     <!-- 清除时间选择按钮 -->
+    <button type="button" id="clear-date" class="btn btn-secondary mt-2 yz" onclick="clearDateSelection()">清除选择时间</button>
+    {% endif %}
+        </form>
+
+        <!-- 财务表格 -->
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>财务类型</th>
+                    <th>负责人</th>
+                    <th>详情</th>
+                    <th>消费金额（元）</th>
+                    <th>附加服务金额（元）</th>
+                    <th>总金额（元）</th>
+                    <th>更改时间</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+    {% csrf_token %}
+        {% for finance in finances %}
+            <tr id="finance-{{ finance.id }}">
+                <td>{{ finance.finance_type }}</td>
+                <td>{{ finance.responsible_person }}</td>
+             <td>
+    <div class="details-container">
+        <input type="text" id="details-{{ finance.id }}" value="{{ finance.details }}" class="form-control" readonly />
+        <button class="btn btn-primary" onclick="toggleDetails({{ finance.id }})" id="details-btn-{{ finance.id }}">查看更多</button>
+        <div id="full-details-{{ finance.id }}" class="full-details" style="display: none;">
+            <p>{{ finance.details }}</p>
+        </div>
+    </div>
+</td>
+                <td>
+                    <input type="number" id="amount-{{ finance.id }}" value="{{ finance.amount }}" class="form-control" readonly />
+                </td>
+               <td>
+    <input type="number" id="extra-{{ finance.id }}" value="{{ finance.additional_service_amount }}" class="form-control" readonly />
+</td>
+<td>
+    <input type="number" id="total-{{ finance.id }}" value="{{ finance.total_amount }}" class="form-control" readonly />
+</td>
+                <td id="record-time">{{ finance.record_time|date:"Y年m月d日 H:i:s"  }} </td>
+
+                <td>
+                    <button class="btn btn-primary btn-edit" onclick="editFinance({{ finance.id }})">编辑</button>
+                    <button class="btn btn-success btn-save" onclick="saveFinance({{ finance.id }})" style="display: none;">保存</button>
+                    <button class="btn btn-danger btn-delete" onclick="deleteFinance({{ finance.id }})">删除</button>
+                </td>
+            </tr>
+        {% endfor %}
+            </tbody>
+        </table>
+    </div>
+<script>
+    function clearDateSelection() {
+        // 清除日期选择框的值并刷新页面
+        document.getElementById('start_date').value = '';
+        document.getElementById('end_date').value = '';
+        // 提交表单以清除日期过滤条件
+        document.forms[0].submit();
+    }
+    const csrfToken = '{{ csrf_token }}';  // 从模板中获取 CSRF token
+
+  // 编辑财务记录
+function editFinance(financeId) {
+    // 启用输入框
+    document.getElementById('details-' + financeId).removeAttribute('readonly');
+     document.getElementById('amount-' + financeId).removeAttribute('readonly');
+    document.getElementById('extra-' + financeId).removeAttribute('readonly');
+
+
+    // 切换按钮显示：编辑 -> 保存
+    document.querySelector(`#finance-${financeId} .btn-edit`).style.display = 'none';
+    document.querySelector(`#finance-${financeId} .btn-save`).style.display = 'inline-block';
+
+       // 初始化总金额
+    updateTotal(financeId);
+}
+
+// 保存财务记录
+function saveFinance(financeId) {
+    // 确认是否保存
+        if (!confirm('确定保存更改吗？')) {
+            return;  // 如果用户点击取消，终止执行
+        }
+    var details = document.getElementById('details-' + financeId).value;
+    var amount = document.getElementById('amount-' + financeId).value;
+    var extra = document.getElementById('extra-' + financeId).value;
+
+    var formData = new FormData();
+    formData.append('id', financeId);
+    formData.append('details', details);
+    formData.append('amount', amount);
+    formData.append('extra', extra);  // 提交附加服务金额
+
+    fetch("{% url 'edit_finance' %}", {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,  // 加入 CSRF token
+        },
+        body: formData,
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('财务记录更新成功');
+            // 更新后禁用输入框
+            document.getElementById('details-' + financeId).setAttribute('readonly', 'readonly');
+            document.getElementById('amount-' + financeId).setAttribute('readonly', 'readonly');
+            document.getElementById('extra-' + financeId).setAttribute('readonly', 'readonly');
+            // 切换按钮显示：保存 -> 编辑
+            document.querySelector(`#finance-${financeId} .btn-edit`).style.display = 'inline-block';
+            document.querySelector(`#finance-${financeId} .btn-save`).style.display = 'none';
+
+            // 更新总金额
+            updateTotal(financeId);
+        } else {
+            alert('错误: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('操作失败，请稍后再试');
+    });
+}
+// 更新总金额
+function updateTotal(financeId) {
+    var amount = parseFloat(document.getElementById('amount-' + financeId).value) || 0;
+    var extra = parseFloat(document.getElementById('extra-' + financeId).value) || 0;
+    var total = amount + extra;
+
+    document.getElementById('total-' + financeId).value = total.toFixed(2);  // 更新总金额，并保留两位小数
+}
+// 删除财务记录
+function deleteFinance(financeId) {
+    // 确认是否删除
+    if (!confirm('确定删除该财务记录吗？')) {
+        return;  // 如果用户点击取消，终止执行
+    }
+    var formData = new FormData();
+    formData.append('id', financeId);
+
+    fetch("{% url 'delete_finance' %}", {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,  // 加入 CSRF token
+        },
+        body: formData,
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('财务记录已删除');
+            // 删除表格中的记录
+            var financeRow = document.getElementById('finance-' + financeId);
+            if (financeRow) {
+                financeRow.remove();  // 删除该行
+            }
+        } else {
+            alert('错误: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('操作失败，请稍后再试');
+    });
+}
+// 切换详情的显示与隐藏
+function toggleDetails(financeId) {
+    var fullDetails = document.getElementById('full-details-' + financeId);
+    var detailsBtn = document.getElementById('details-btn-' + financeId);
+
+    if (fullDetails.style.display === 'none') {
+        // 显示完整内容
+        fullDetails.style.display = 'block';
+        detailsBtn.textContent = '收起';
+    } else {
+        // 收起内容
+        fullDetails.style.display = 'none';
+        detailsBtn.textContent = '查看更多';
+    }
+}
+
+</script>
+
+</div>
+
+{% endblock %}
